@@ -368,7 +368,7 @@ mod tests {
         crate::soup::qb_ext::QueryBuilderExt,
     };
 
-    const TEST_HTML_STRING: &'static str = r#"
+    const TEST_HTML_STRING: &str = r#"
 <!doctype html>
 <html>
   <head>
