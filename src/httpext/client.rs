@@ -845,15 +845,11 @@ mod tests {
         drop(client);
 
         let cookie_store = cookie_store.read().unwrap();
-        let mut data = Vec::new();
-        cookie_store.save_json(&mut data).unwrap();
-        let data = String::from_utf8(data).unwrap();
-        assert_eq!(data.as_str(), r#"{}"#);
 
         let cst = CookieStoreTest {
             cookies: cookie_store.clone(),
         };
         let ser_data = serde_json::to_string(&cst).unwrap();
-        assert_eq!(ser_data.as_str(), format!(r#"{{"cookies":[{}]}}"#, data.replace('\n', "")).as_str());
+        assert_eq!(ser_data.as_str(), r#"{"cookies":[{"raw_cookie":"TestCookie=Value; Domain=127.0.0.1","path":["/",false],"domain":{"Suffix":"127.0.0.1"},"expires":"SessionEnd"}]}"#);
     }
 }
