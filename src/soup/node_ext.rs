@@ -11,67 +11,37 @@ pub trait NodeExt: Sized {
     /// Returns `true` if node is of type Document
     fn is_document(&self) -> bool {
         let node = self.get_node();
-        match node.data {
-            NodeData::Document {
-                ..
-            } => true,
-            _ => false,
-        }
+        matches!(node.data, NodeData::Document { .. })
     }
 
     /// Returns `true` if node is of type Doctype
     fn is_doctype(&self) -> bool {
         let node = self.get_node();
-        match node.data {
-            NodeData::Doctype {
-                ..
-            } => true,
-            _ => false,
-        }
+        matches!(node.data, NodeData::Doctype { .. })
     }
 
     /// Returns `true` if node is of type Text
     fn is_text(&self) -> bool {
         let node = self.get_node();
-        match node.data {
-            NodeData::Text {
-                ..
-            } => true,
-            _ => false,
-        }
+        matches!(node.data, NodeData::Text { .. })
     }
 
     /// Returns `true` if node is of type Comment
     fn is_comment(&self) -> bool {
         let node = self.get_node();
-        match node.data {
-            NodeData::Comment {
-                ..
-            } => true,
-            _ => false,
-        }
+        matches!(node.data, NodeData::Comment { .. })
     }
 
     /// Returns `true` if node is of type ProcessingInstruction
     fn is_processing_instruction(&self) -> bool {
         let node = self.get_node();
-        match node.data {
-            NodeData::ProcessingInstruction {
-                ..
-            } => true,
-            _ => false,
-        }
+        matches!(node.data, NodeData::ProcessingInstruction { .. })
     }
 
     /// Returns `true` if node is of type Element
     fn is_element(&self) -> bool {
         let node = self.get_node();
-        match node.data {
-            NodeData::Element {
-                ..
-            } => true,
-            _ => false,
-        }
+        matches!(node.data, NodeData::Element { .. })
     }
 
     /// Retrieves the name of the node
@@ -229,13 +199,14 @@ pub trait NodeExt: Sized {
 }
 
 fn extract_text(node: &Node, result: &mut Vec<String>) {
-    match node.data {
-        NodeData::Text {
-            ref contents,
-            ..
-        } => result.push(contents.borrow().to_string()),
-        _ => (),
+    if let NodeData::Text {
+        ref contents,
+        ..
+    } = node.data
+    {
+        result.push(contents.borrow().to_string());
     }
+
     let children = node.children.borrow();
     for child in children.iter() {
         extract_text(child, result);
