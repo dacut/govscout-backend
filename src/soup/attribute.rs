@@ -27,7 +27,7 @@ fn is_multiple(tag_name: &str, attr_name: &str) -> bool {
 fn match_list_attr<V: Pattern>(needle: &V, haystack: &str) -> bool {
     for part in haystack.split(char::is_whitespace) {
         let part = part.trim();
-        if needle.matches(&part) {
+        if needle.matches(part) {
             return true;
         }
     }
@@ -46,14 +46,12 @@ pub(crate) fn list_aware_match<K: Pattern, V: Pattern>(node: &Node, attr_name: &
                 let k = attr.name.local.as_ref();
                 let v = attr.value.as_ref();
                 if attr_name.matches(k) {
-                    if is_multiple(name.local.as_ref(), &k) {
-                        if match_list_attr(attr_value, &v) {
+                    if is_multiple(name.local.as_ref(), k) {
+                        if match_list_attr(attr_value, v) {
                             return true;
                         }
-                    } else {
-                        if attr_value.matches(v) {
-                            return true;
-                        }
+                    } else if attr_value.matches(v) {
+                        return true;
                     }
                 }
             }

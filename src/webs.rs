@@ -49,7 +49,7 @@ pub(crate) async fn start_webs_crawl(
     req: StartWebsCrawlRequest,
     context: Context,
 ) -> Result<StartWebsCrawlResponse, Error> {
-    let url_str = req.url.as_ref().map(String::as_str).unwrap_or(DEFAULT_START_URL);
+    let url_str = req.url.as_deref().unwrap_or(DEFAULT_START_URL);
     let url = Url::parse(url_str)?;
 
     let client = req.crawl.build_client(log_config.clone(), &context).build()?;

@@ -53,23 +53,23 @@ impl Form {
 
         // Find all input fields within this form.
         for field in form.tag("input").find_all() {
-            Self::handle_input_field(&mut fields, &field, id.as_ref().map(String::as_str), true);
+            Self::handle_input_field(&mut fields, &field, id.as_deref(), true);
         }
 
         // TODO: Handle <select> elements
 
         for field in form.tag("textarea").find_all() {
-            Self::handle_textarea_field(&mut fields, &field, id.as_ref().map(String::as_str), true);
+            Self::handle_textarea_field(&mut fields, &field, id.as_deref(), true);
         }
 
         // Find fields outside of the form itself.
         if id.is_some() {
             for field in document.tag("input").find_all() {
-                Self::handle_input_field(&mut fields, &field, id.as_ref().map(String::as_str), false);
+                Self::handle_input_field(&mut fields, &field, id.as_deref(), false);
             }
 
             for field in document.tag("textarea").find_all() {
-                Self::handle_textarea_field(&mut fields, &field, id.as_ref().map(String::as_str), false);
+                Self::handle_textarea_field(&mut fields, &field, id.as_deref(), false);
             }
         }
 
@@ -120,7 +120,7 @@ impl Form {
             }
             "reset" | "submit" => (),
             _ => {
-                let value = field.get("value").unwrap_or_else(|| "".to_string());
+                let value = field.get("value").unwrap_or_default();
                 fields.insert(name, value);
             }
         }

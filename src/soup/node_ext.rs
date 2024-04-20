@@ -245,7 +245,7 @@ fn extract_text(node: &Node, result: &mut Vec<String>) {
 impl NodeExt for Handle {
     #[inline(always)]
     fn get_node(&self) -> &Node {
-        &*self
+        self
     }
 }
 

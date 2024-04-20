@@ -129,7 +129,7 @@ pub struct NodeParentIter {
 impl fmt::Debug for NodeParentIter {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use crate::soup::node_ext::NodeExt;
-        f.debug_struct("NodeParentIter").field("inner", &format!("{}", self.inner.display())).finish()
+        f.debug_struct("NodeParentIter").field("inner", &self.inner.display().to_string()).finish()
     }
 }
 

@@ -76,7 +76,7 @@ where
     V: Pattern,
 {
     fn matches(&self, node: &Node) -> bool {
-        attribute::list_aware_match(&node, &self.key, &self.value)
+        attribute::list_aware_match(node, &self.key, &self.value)
     }
 }
 
@@ -446,7 +446,7 @@ impl<'a, T: Query + 'a, U: Query + 'a> IntoIterator for QueryBuilder<'a, T, U> {
             Some(1u8)
         };
         let iter = build_iter(self.handle, queries, recurse_levels);
-        let iter: BoxNodeIter<'_> = Box::new(iter.flat_map(|node| node));
+        let iter: BoxNodeIter<'_> = Box::new(iter.flatten());
         if let Some(limit) = self.limit {
             let iter: BoxNodeIter<'_> = Box::new(iter.take(limit));
             iter

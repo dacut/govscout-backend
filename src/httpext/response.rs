@@ -123,7 +123,7 @@ impl Response {
             let sha256_b64 = BASE64_STANDARD.encode(sha256.as_slice());
 
             let md5 = *md5.compute();
-            let md5_str = BASE64_STANDARD.encode(&md5);
+            let md5_str = BASE64_STANDARD.encode(md5);
 
             let key = format!("{}{}", log_config.s3_prefix, sha256_str);
 
@@ -238,7 +238,7 @@ impl Response {
             extensions,
             url: final_url,
             body,
-            content_length: content_length as usize,
+            content_length,
         })
     }
 
