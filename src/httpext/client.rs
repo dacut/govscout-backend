@@ -525,7 +525,7 @@ impl ClientBuilder {
     #[cfg_attr(docsrs, doc(cfg(feature = "rustls-tls-webpki-roots")))]
     #[inline(always)]
     pub fn tls_built_in_webpki_certs(mut self, enabled: bool) -> ClientBuilder {
-        self.client_builder = self.client_builder.tls_built_in_webpki_certs(enabled);
+        self.builder = self.builder.tls_built_in_webpki_certs(enabled);
         self
     }
 
@@ -536,7 +536,7 @@ impl ClientBuilder {
     #[cfg_attr(docsrs, doc(cfg(feature = "rustls-tls-native-roots")))]
     #[inline(always)]
     pub fn tls_built_in_native_certs(mut self, enabled: bool) -> ClientBuilder {
-        self.client_builder = self.client_builder.tls_built_in_native_certs(enabled);
+        self.builder = self.builder.tls_built_in_native_certs(enabled);
         self
     }
 
