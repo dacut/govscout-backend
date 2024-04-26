@@ -5,7 +5,7 @@ use {
         httpext::{default_headers, ClientBuilder, CookieStore, CookieStoreRwLock, LogConfig, DEFAULT_REDIRECT_LIMIT},
         webs::WebsOperation,
     },
-    lambda_runtime::Context,
+    lambda_runtime::{Context, Error as LambdaError},
     log::*,
     reqwest::redirect::Policy as RedirectPolicy,
     serde::{
@@ -48,11 +48,26 @@ pub struct Request {
     pub crawl: CrawlParameters,
 }
 
+/// Next request to schedule. This is similar to Request but is more strict about types.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct NextRequest {
+    /// The operation to perform.
+    pub operation: Operation,
+
+    /// The URL to start crawling from.
+    pub url: Option<String>,
+
+    /// Common crawl parameters
+    #[serde(flatten)]
+    pub crawl: CrawlParameters,
+}
+
 /// Response type for all operations.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Response {
-    /// The next operations to schedule.
-    pub next_operations: Vec<Request>,
+    /// The next requests to schedule.
+    pub next_requests: Vec<NextRequest>,
 }
 
 /// Common parameters for crawling.
@@ -120,6 +135,46 @@ impl Display for Operation {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         match self {
             Operation::Webs(op) => write!(f, "{SUBSYS_WEBS}:{op}"),
+        }
+    }
+}
+
+impl FromStr for Operation {
+    type Err = String;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = value.split(':').collect();
+        if parts.len() < 2 {
+            return Err(format!("Invalid operation format (missing ':'): {value}"));
+        }
+
+        match parts[0] {
+            SUBSYS_WEBS => Ok(Self::Webs(WebsOperation::from_str(parts[1])?)),
+            _ => Err("unknown subsystem".to_string()),
+        }
+    }
+
+}
+
+impl Operation {
+    /// Handle a request.
+    pub async fn handle(self, log_config: LogConfig, req: Request, context: Context) -> Result<Response, LambdaError> {
+        match self {
+            Operation::Webs(op) => op.handle(log_config, req, context).await,
+        }
+    }
+
+    /// Return the subsystem of the operation.
+    pub fn subsystem(&self) -> &'static str {
+        match self {
+            Operation::Webs(_) => SUBSYS_WEBS,
+        }
+    }
+
+    /// Return the operation name within the subsystem.
+    pub fn operation(&self) -> &'static str {
+        match self {
+            Operation::Webs(op) => op.operation(),
         }
     }
 }

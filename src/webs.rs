@@ -3,10 +3,10 @@
 use {
     crate::{
         httpext::{Client, Form, LogConfig, Response as HttpResponse},
-        shapes::{CrawlParameters, Request, Response},
+        shapes::{CrawlParameters, Operation, Request, NextRequest, Response},
         BoxError,
     },
-    lambda_runtime::{Context, Error},
+    lambda_runtime::{Context, Error as LambdaError},
     log::*,
     reqwest::Url,
     serde::{Deserialize, Serialize},
@@ -23,34 +23,55 @@ const SSM_WEBS_PASSWORD_PARAM: &str = "Webs/Password";
 const WEBS_TXT_EMAIL_PARAM: &str = "txtEmail";
 const WEBS_TXT_PASSWORD_PARAM: &str = "txtPassword";
 const OP_START_CRAWL: &str = "StartCrawl";
+const OP_CRAWL_OPPORTUNITY_LIST: &str = "CrawlOpportunityList";
 
 /// Possible operations for the WEBS service.
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum WebsOperation {
     /// Start a crawl on the WEBS service.
     StartCrawl,
+
+    /// Crawl the opportunity list.
+    CrawlOpportunityList
 }
 
 impl FromStr for WebsOperation {
-    type Err = ();
+    type Err = String;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         match value {
             OP_START_CRAWL => Ok(WebsOperation::StartCrawl),
-            _ => Err(()),
+            OP_CRAWL_OPPORTUNITY_LIST => Ok(WebsOperation::CrawlOpportunityList),
+            _ => Err(format!("Unknown operation: {value}")),
         }
     }
 }
 
 impl Display for WebsOperation {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        f.write_str(self.operation())
+    }
+}
+
+impl WebsOperation {
+    /// Handle a request.
+    pub async fn handle(self, log_config: LogConfig, req: Request, context: Context) -> Result<Response, LambdaError> {
         match self {
-            WebsOperation::StartCrawl => f.write_str(OP_START_CRAWL),
+            Self::StartCrawl => start_crawl(log_config, req, context).await,
+            Self::CrawlOpportunityList => todo!(),
+        }
+    }
+
+    /// Return the operation name within the subsystem.
+    pub fn operation(&self) -> &'static str {
+        match self {
+            Self::StartCrawl => OP_START_CRAWL,
+            Self::CrawlOpportunityList => OP_CRAWL_OPPORTUNITY_LIST,
         }
     }
 }
 
-pub(crate) async fn start_crawl(log_config: LogConfig, req: Request, context: Context) -> Result<Response, Error> {
+pub(crate) async fn start_crawl(log_config: LogConfig, req: Request, context: Context) -> Result<Response, LambdaError> {
     let url_str = req.url.as_deref().unwrap_or(DEFAULT_START_URL);
     let url = Url::parse(url_str)?;
 
@@ -84,8 +105,8 @@ pub(crate) async fn start_crawl(log_config: LogConfig, req: Request, context: Co
     let cookie_str = serde_json::to_string(&cookies).unwrap();
     debug!("Cookies: {cookie_str}");
 
-    let next_op = Request {
-        operation: "CrawlWebsOpportunityList".to_string(),
+    let next_op = NextRequest {
+        operation: Operation::Webs(WebsOperation::CrawlOpportunityList),
         url: Some(SEARCH_START_PATH.to_string()),
         crawl: CrawlParameters {
             crawl_id: Some(client.crawl_id),
@@ -95,7 +116,7 @@ pub(crate) async fn start_crawl(log_config: LogConfig, req: Request, context: Co
     };
 
     Ok(Response {
-        next_operations: vec![next_op],
+        next_requests: vec![next_op],
     })
 }
 

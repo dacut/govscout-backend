@@ -2,6 +2,7 @@ use {
     crate::{httpext::log_aws_err, BoxError},
     aws_sdk_dynamodb::Client as DynamoDbClient,
     aws_sdk_s3::Client as S3Client,
+    aws_sdk_sqs::Client as SqsClient,
     aws_sdk_ssm::Client as SsmClient,
     log::*,
     std::env,
@@ -11,6 +12,7 @@ const ENV_LOG_S3_BUCKET: &str = "LOG_S3_BUCKET";
 const ENV_LOG_S3_PREFIX: &str = "LOG_S3_PREFIX";
 const ENV_LOG_DDB_TABLE: &str = "LOG_DYNAMODB_TABLE";
 const ENV_LOG_DYNAMODB_TABLE: &str = "LOG_DYNAMODB_TABLE";
+const ENV_SQS_QUEUE_URL: &str = "SQS_QUEUE_URL";
 const ENV_SSM_PREFIX: &str = "SSM_PREFIX";
 const DEFAULT_SSM_PREFIX: &str = "/GovScout/";
 
@@ -20,8 +22,11 @@ pub struct LogConfig {
     /// The DynamoDB client to use.
     pub ddb_client: DynamoDbClient,
 
-    /// The S3 client to use.
+    /// The Simple Storage Service (S3) client to use.
     pub s3_client: S3Client,
+
+    /// The Simple Queue Service (SQS) client to use.
+    pub sqs_client: SqsClient,
 
     /// The Systems Manager client to use.
     pub ssm_client: SsmClient,
@@ -31,6 +36,9 @@ pub struct LogConfig {
 
     /// The S3 key prefix to use.
     pub s3_prefix: String,
+
+    /// The SQS queue URL to use.
+    pub sqs_queue_url: String,
 
     /// The SSM prefix to use.
     pub ssm_prefix: String,
@@ -45,10 +53,12 @@ impl LogConfig {
         let aws_config = aws_config::load_from_env().await;
         let ddb_client = DynamoDbClient::new(&aws_config);
         let s3_client = S3Client::new(&aws_config);
+        let sqs_client = SqsClient::new(&aws_config);
         let ssm_client = SsmClient::new(&aws_config);
 
         let s3_bucket = env::var(ENV_LOG_S3_BUCKET).expect("LOG_S3_BUCKET must be set");
         let s3_prefix = env::var(ENV_LOG_S3_PREFIX).unwrap_or_else(|_| "".to_string());
+        let sqs_queue_url = env::var(ENV_SQS_QUEUE_URL).expect("SQS_QUEUE_URL must be set");
         let ssm_prefix = env::var(ENV_SSM_PREFIX).unwrap_or_else(|_| DEFAULT_SSM_PREFIX.to_string());
         let ddb_table = env::var(ENV_LOG_DYNAMODB_TABLE)
             .unwrap_or_else(|_| env::var(ENV_LOG_DDB_TABLE).expect("LOG_DYNAMODB_TABLE or LOG_DDB_TABLE must be set"));
@@ -56,9 +66,11 @@ impl LogConfig {
         Self {
             ddb_client,
             s3_client,
+            sqs_client,
             ssm_client,
             s3_bucket,
             s3_prefix,
+            sqs_queue_url,
             ssm_prefix,
             ddb_table,
         }
