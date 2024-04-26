@@ -126,7 +126,7 @@ impl RequestBuilder {
     #[cfg(feature = "multipart")]
     #[cfg_attr(docsrs, doc(cfg(feature = "multipart")))]
     #[inline(always)]
-    pub fn multipart(mut self, mut multipart: reqwest::multipart::Form) -> RequestBuilder {
+    pub fn multipart(mut self, multipart: reqwest::multipart::Form) -> RequestBuilder {
         self.builder = self.builder.multipart(multipart);
         self
     }
