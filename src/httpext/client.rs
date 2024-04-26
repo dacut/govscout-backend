@@ -632,7 +632,7 @@ impl ClientBuilder {
     #[cfg(feature = "hickory-dns")]
     #[cfg_attr(docsrs, doc(cfg(feature = "hickory-dns")))]
     pub fn hickory_dns(mut self, enable: bool) -> ClientBuilder {
-        self.client_builder = self.client_builder.hickory_dns(enable);
+        self.builder = self.builder.hickory_dns(enable);
         self
     }
 
