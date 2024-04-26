@@ -11,7 +11,9 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    steps:
+    steps:            
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.7.3
       - uses: actions/checkout@v4
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
