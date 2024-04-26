@@ -3,36 +3,56 @@
 use {
     crate::{
         httpext::{default_headers, ClientBuilder, CookieStore, CookieStoreRwLock, LogConfig, DEFAULT_REDIRECT_LIMIT},
-        webs::{StartWebsCrawlRequest, StartWebsCrawlResponse},
+        webs::WebsOperation,
     },
     lambda_runtime::Context,
     log::*,
     reqwest::redirect::Policy as RedirectPolicy,
-    serde::{Deserialize, Serialize},
-    std::sync::Arc,
+    serde::{
+        de::{Deserializer, Error as SerdeError, Visitor},
+        ser::Serializer,
+        Deserialize, Serialize,
+    },
+    std::{
+        fmt::{Display, Formatter, Result as FmtResult},
+        str::FromStr,
+        sync::Arc,
+    },
 };
 
-pub(crate) const DEFAULT_USER_AGENT: &str =
+/// The default user agent to use when crawling.
+pub const DEFAULT_USER_AGENT: &str =
     "Mozilla/5.0 (compatible; GovScout/0.1; +https://github.com/dacut/govscout-backend)";
 
-/// Union of all request types.
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(tag = "Operation", content = "Request")]
-pub enum Request {
-    StartWebsCrawl(StartWebsCrawlRequest),
+const SUBSYS_WEBS: &str = "Webs";
+
+/// Operations that can be performed.
+#[derive(Clone, Copy, Debug)]
+pub enum Operation {
+    /// WEBS operation.
+    Webs(WebsOperation),
 }
 
-/// Union of all response types.
+/// Request type for all operations.
 #[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(untagged)]
-pub enum Response {
-    StartWebsCrawl(StartWebsCrawlResponse),
+#[serde(rename_all = "PascalCase")]
+pub struct Request {
+    /// The operation to perform.
+    pub operation: String,
+
+    /// The URL to start crawling from.
+    pub url: Option<String>,
+
+    /// Common crawl parameters
+    #[serde(flatten)]
+    pub crawl: CrawlParameters,
 }
 
-impl From<StartWebsCrawlResponse> for Response {
-    fn from(resp: StartWebsCrawlResponse) -> Self {
-        Response::StartWebsCrawl(resp)
-    }
+/// Response type for all operations.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Response {
+    /// The next operations to schedule.
+    pub next_operations: Vec<Request>,
 }
 
 /// Common parameters for crawling.
@@ -54,6 +74,63 @@ pub struct CrawlParameters {
 #[inline]
 pub fn default_user_agent() -> String {
     DEFAULT_USER_AGENT.to_string()
+}
+
+struct OperationVisitor;
+
+impl<'de> Visitor<'de> for OperationVisitor {
+    type Value = Operation;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("an operation string")
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<Operation, E>
+    where
+        E: SerdeError,
+    {
+        let parts: Vec<&str> = value.split(':').collect();
+        if parts.len() != 2 {
+            return Err(E::custom("invalid operation format"));
+        }
+
+        match parts[0] {
+            SUBSYS_WEBS => {
+                let webs_op = match WebsOperation::from_str(parts[1]) {
+                    Ok(op) => op,
+                    Err(_) => return Err(E::custom(format!("Unknown WEBS operation {}", parts[1]))),
+                };
+                Ok(Operation::Webs(webs_op))
+            }
+            _ => Err(E::custom("unknown subsystem")),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Operation {
+    fn deserialize<D>(deserializer: D) -> Result<Operation, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_str(OperationVisitor)
+    }
+}
+
+impl Display for Operation {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        match self {
+            Operation::Webs(op) => write!(f, "{SUBSYS_WEBS}:{op}"),
+        }
+    }
+}
+
+impl Serialize for Operation {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.to_string().as_str())
+    }
 }
 
 impl CrawlParameters {
@@ -84,5 +161,18 @@ impl CrawlParameters {
             crawl_id,
             cookie_store,
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{shapes::Operation, webs::WebsOperation};
+
+    /// Check the serialization of operations.
+    #[test]
+    fn ser_operation() {
+        let op = Operation::Webs(WebsOperation::StartCrawl);
+        let op = serde_json::to_string(&op).unwrap();
+        assert_eq!(op.as_str(), r#""Webs:StartCrawl""#);
     }
 }

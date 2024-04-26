@@ -2,14 +2,18 @@
 //! (WEBS: Washington's Electronic Business Solution)
 use {
     crate::{
-        httpext::{Client, Form, LogConfig, Response},
-        shapes::CrawlParameters,
+        httpext::{Client, Form, LogConfig, Response as HttpResponse},
+        shapes::{CrawlParameters, Request, Response},
         BoxError,
     },
     lambda_runtime::{Context, Error},
     log::*,
     reqwest::Url,
     serde::{Deserialize, Serialize},
+    std::{
+        fmt::{Display, Formatter, Result as FmtResult},
+        str::FromStr,
+    },
 };
 
 const DEFAULT_START_URL: &str = "https://pr-webs-vendor.des.wa.gov/LoginPage.aspx";
@@ -18,37 +22,35 @@ const SSM_WEBS_USERNAME_PARAM: &str = "Webs/Username";
 const SSM_WEBS_PASSWORD_PARAM: &str = "Webs/Password";
 const WEBS_TXT_EMAIL_PARAM: &str = "txtEmail";
 const WEBS_TXT_PASSWORD_PARAM: &str = "txtPassword";
+const OP_START_CRAWL: &str = "StartCrawl";
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "PascalCase")]
-pub struct StartWebsCrawlRequest {
-    /// Common crawl parameters
-    #[serde(flatten)]
-    pub crawl: CrawlParameters,
-
-    /// The URL to start crawling from.
-    pub url: Option<String>,
+/// Possible operations for the WEBS service.
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum WebsOperation {
+    /// Start a crawl on the WEBS service.
+    StartCrawl,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "PascalCase")]
-pub struct StartWebsCrawlResponse {
-    /// Common crawl parameters
-    #[serde(flatten)]
-    pub crawl_parameters: CrawlParameters,
+impl FromStr for WebsOperation {
+    type Err = ();
 
-    /// The next operation to perform. Should be "CrawlWebsOpportunityList".
-    pub next_operation: String,
-
-    /// The URL to start crawling from.
-    pub url: String,
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        match value {
+            OP_START_CRAWL => Ok(WebsOperation::StartCrawl),
+            _ => Err(()),
+        }
+    }
 }
 
-pub(crate) async fn start_webs_crawl(
-    log_config: LogConfig,
-    req: StartWebsCrawlRequest,
-    context: Context,
-) -> Result<StartWebsCrawlResponse, Error> {
+impl Display for WebsOperation {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match self {
+            WebsOperation::StartCrawl => f.write_str(OP_START_CRAWL),
+        }
+    }
+}
+
+pub(crate) async fn start_crawl(log_config: LogConfig, req: Request, context: Context) -> Result<Response, Error> {
     let url_str = req.url.as_deref().unwrap_or(DEFAULT_START_URL);
     let url = Url::parse(url_str)?;
 
@@ -82,19 +84,27 @@ pub(crate) async fn start_webs_crawl(
     let cookie_str = serde_json::to_string(&cookies).unwrap();
     debug!("Cookies: {cookie_str}");
 
-    Ok(StartWebsCrawlResponse {
-        crawl_parameters: CrawlParameters {
+    let next_op = Request {
+        operation: "CrawlWebsOpportunityList".to_string(),
+        url: Some(SEARCH_START_PATH.to_string()),
+        crawl: CrawlParameters {
             crawl_id: Some(client.crawl_id),
             user_agent: req.crawl.user_agent,
             cookies,
         },
-        next_operation: "CrawlWebsOpportunityList".to_string(),
-        url: SEARCH_START_PATH.to_string(),
+    };
+
+    Ok(Response {
+        next_operations: vec![next_op],
     })
 }
 
 /// Submit the login form to the WEBS portal.
-async fn submit_login(client: &Client, log_config: &LogConfig, response: Response) -> Result<Response, BoxError> {
+async fn submit_login(
+    client: &Client,
+    log_config: &LogConfig,
+    response: HttpResponse,
+) -> Result<HttpResponse, BoxError> {
     let url = response.url().clone();
     debug!("WEBS login form URL: {url}");
 

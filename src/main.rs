@@ -30,8 +30,9 @@ async fn handler(event: LambdaEvent<Request>) -> Result<Response, LambdaError> {
 
     let log_config = LogConfig::new().await;
 
-    let result = match request {
-        Request::StartWebsCrawl(req) => webs::start_webs_crawl(log_config, req, context).await.map(Into::into),
+    let result = match request.operation.as_str() {
+        "StartWebsCrawl" => webs::start_crawl(log_config, request, context).await,
+        _ => Err(format!("Unknown operation {}", request.operation).into()),
     };
 
     match result {

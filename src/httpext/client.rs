@@ -474,7 +474,7 @@ impl ClientBuilder {
     #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
     #[inline(always)]
     pub fn interface(mut self, interface: &str) -> ClientBuilder {
-        self.client_builder = self.client_builder.interface(interface);
+        self.builder = self.builder.interface(interface);
         self
     }
 
