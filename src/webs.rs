@@ -3,7 +3,7 @@
 use {
     crate::{
         httpext::{Client, Form, LogConfig, Response as HttpResponse},
-        shapes::{CrawlParameters, Operation, Request, NextRequest, Response},
+        shapes::{CrawlParameters, NextRequest, Operation, Request, Response},
         BoxError,
     },
     lambda_runtime::{Context, Error as LambdaError},
@@ -32,7 +32,7 @@ pub enum WebsOperation {
     StartCrawl,
 
     /// Crawl the opportunity list.
-    CrawlOpportunityList
+    CrawlOpportunityList,
 }
 
 impl FromStr for WebsOperation {
@@ -71,7 +71,11 @@ impl WebsOperation {
     }
 }
 
-pub(crate) async fn start_crawl(log_config: LogConfig, req: Request, context: Context) -> Result<Response, LambdaError> {
+pub(crate) async fn start_crawl(
+    log_config: LogConfig,
+    req: Request,
+    context: Context,
+) -> Result<Response, LambdaError> {
     let url_str = req.url.as_deref().unwrap_or(DEFAULT_START_URL);
     let url = Url::parse(url_str)?;
 

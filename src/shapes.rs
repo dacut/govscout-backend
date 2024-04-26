@@ -153,7 +153,6 @@ impl FromStr for Operation {
             _ => Err("unknown subsystem".to_string()),
         }
     }
-
 }
 
 impl Operation {

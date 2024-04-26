@@ -850,6 +850,9 @@ mod tests {
             cookies: cookie_store.clone(),
         };
         let ser_data = serde_json::to_string(&cst).unwrap();
-        assert_eq!(ser_data.as_str(), r#"{"cookies":[{"raw_cookie":"TestCookie=Value; Domain=127.0.0.1","path":["/",false],"domain":{"Suffix":"127.0.0.1"},"expires":"SessionEnd"}]}"#);
+        assert_eq!(
+            ser_data.as_str(),
+            r#"{"cookies":[{"raw_cookie":"TestCookie=Value; Domain=127.0.0.1","path":["/",false],"domain":{"Suffix":"127.0.0.1"},"expires":"SessionEnd"}]}"#
+        );
     }
 }
