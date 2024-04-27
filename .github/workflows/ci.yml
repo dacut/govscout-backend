@@ -4,9 +4,13 @@ on:
   push:
     branches:
       - main
+      - dev
+      - prod
   pull_request_target:
     branches:
       - main
+      - dev
+      - prod
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -28,12 +32,12 @@ jobs:
         run: cargo build --all-targets
       - name: Test
         run: cargo test --all-targets --all-features
-  deploy:
+  deploy-dev:
     runs-on: ubuntu-latest
     environment: dev
     timeout-minutes: 30
     needs: check
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
