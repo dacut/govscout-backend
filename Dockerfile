@@ -3,7 +3,7 @@ RUN mkdir /build
 COPY ["Cargo.toml", "Cargo.lock", "/build/"]
 COPY ["src", "/build/src/"]
 WORKDIR /build
-RUN cargo build --release
+RUN cargo build -j 8 --release
 RUN ln /build/target/release/govscout-backend /bootstrap
 
 FROM public.ecr.aws/lambda/provided:al2023

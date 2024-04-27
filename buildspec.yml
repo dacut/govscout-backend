@@ -15,6 +15,7 @@ phases:
       - chmod +x rustup.sh
       - ./rustup.sh -y --profile default --default-toolchain stable-aarch64-unknown-linux-gnu
       - export PATH="${HOME}/.cargo/bin:${PATH}"
+      - cat /proc/cpuinfo
   build:
     on-failure: ABORT
     commands:
@@ -22,8 +23,9 @@ phases:
       - aws --region us-east-1 ecr-public get-login-password | docker login --username AWS --password-stdin public.ecr.aws
       - export PATH="${HOME}/.cargo/bin:${PATH}"
       - cargo fmt --check
-      - cargo clippy --all-features -- -D warnings
-      - cargo test --all-features
+      - cargo clippy -j 8 --all-features -- -D warnings
+      - cargo test -j 8 --all-features
       - export IMAGE_TAG=$(date -u +%Y%m%dT%H%M%S); echo "$IMAGE_TAG" | tee imagetag.txt
+      - codebuild-breakpoint
       - /usr/local/bin/docker buildx build --platform linux/arm64 -f Dockerfile -t "${ECR_REPOSITORY_URL}:${IMAGE_TAG}" --push .
       - echo "Pushed ${ECR_REGISTRY_URL}:${IMAGE_TAG}"
