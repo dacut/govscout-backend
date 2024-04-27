@@ -42,7 +42,7 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: dacut/configure-aws-credentials@v4.0.3-dacut
+      - uses: dacut/configure-aws-credentials@v4.0.4-dacut
         with:
           aws-region: ${{ vars.REGION }}
           role-to-assume: ${{ vars.ROLE_ARN }}
