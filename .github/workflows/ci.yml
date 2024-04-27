@@ -72,6 +72,6 @@ jobs:
           aws ecr get-login-password | docker login --username AWS --password-stdin ${{ vars.ECR_REGISTRY_URL }}
           aws --region us-east-1 ecr-public get-login-password | docker login --username AWS --password-stdin public.ecr.aws
           export IMAGE_TAG=$(date -u +%Y%m%dT%H%M%S)
-          docker build . -f Dockerfile -t "${{ vars.ECR_REGISTRY_URL }}:$IMAGE_TAG"
-          docker push "${{ vars.ECR_REGISTRY_URL }}:$IMAGE_TAG"
+          docker buildx create --platform linux/amd64,linux/arm64 --name multiplatform --use
+          docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile -t "${{ vars.ECR_REGISTRY_URL }}:$IMAGE_TAG" --push .
           echo "Pushed ${{ vars.ECR_REGISTRY_URL }}:$IMAGE_TAG"
