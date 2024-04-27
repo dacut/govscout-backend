@@ -44,7 +44,7 @@ jobs:
     steps:
       - uses: aws-actions/configure-aws-credentials@v4.0.2
         with:
-          aws-region: ${{ vars.REGION }}
+          aws-region: us-east-1
           role-to-assume: ${{ vars.ROLE_ARN }}
       - uses: actions/checkout@v4
       - name: Login to Amazon ECR
