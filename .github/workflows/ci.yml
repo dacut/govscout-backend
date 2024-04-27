@@ -65,16 +65,11 @@ jobs:
           aws-region: ${{ vars.REGION }}
           role-to-assume: ${{ secrets.ROLE_ARN }}
       - uses: actions/checkout@v4
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-        with:
-          registries: ${{ vars.ECR_REGISTRY_URL }}
-          mask-password: "true"
       - name: Build, tag, and push image to Amazon ECR
         id: build-publish
         shell: bash
         run: |
+          aws ecr get-login-password | docker login --username AWS --password-stdin ${{ vars.ECR_REGISTRY_URL }}
           aws --region us-east-1 ecr-public get-login-password | docker login --username AWS --password-stdin public.ecr.aws
           export IMAGE_TAG=$(date -u +%Y%m%dT%H%M%S)
           docker build . -f Dockerfile -t "${{ vars.ECR_REGISTRY_URL }}:$IMAGE_TAG"
