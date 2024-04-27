@@ -52,7 +52,7 @@ jobs:
             echo "REGION is not set"
             exit 1
           fi;
-          if [[ -z "${{ vars.ROLE_ARN }}" ]]; then
+          if [[ -z "${{ secrets.ROLE_ARN }}" ]]; then
             echo "ROLE_ARN is not set"
             exit 1
           fi;
@@ -63,7 +63,7 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v4.0.2
         with:
           aws-region: ${{ vars.REGION }}
-          role-to-assume: ${{ vars.ROLE_ARN }}
+          role-to-assume: ${{ secrets.ROLE_ARN }}
       - uses: actions/checkout@v4
       - name: Login to Amazon ECR
         id: login-ecr
