@@ -42,13 +42,13 @@ jobs:
       id-token: write
       contents: read
     env:
-      AWS_REGION: us-west-2
-      AWS_DEFAULT_REGION: us-west-2
+      AWS_REGION: ${{ vars.REGION }}
+      AWS_DEFAULT_REGION: ${{ vars.REGION }}
     steps:
       - uses: aws-actions/configure-aws-credentials@v4.0.2
         with:
-          aws-region: us-west-2
-          role-to-assume: arn:aws:iam::557925715019:role/GovScoutDevGitHubActions
+          aws-region: ${{ vars.REGION }}
+          role-to-assume: ${{ vars.ROLE_ARN }}
       - uses: actions/checkout@v4
       - name: Login to Amazon ECR
         id: login-ecr
