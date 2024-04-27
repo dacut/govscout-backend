@@ -35,7 +35,7 @@ jobs:
   deploy-dev:
     runs-on: ubuntu-latest
     environment: dev
-    timeout-minutes: 30
+    timeout-minutes: 60
     needs: check
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     permissions:
