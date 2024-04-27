@@ -35,5 +35,7 @@ phases:
     commands:
       - |
         if [[ ! -z "$LAMBDA_FUNCTION_NAME" ]]; then
+          IMAGE_TAG=$(cat imagetag.txt)
+          echo aws lambda update-function-code --function-name $LAMBDA_FUNCTION_NAME --image-uri "${ECR_REPOSITORY_URL}:${IMAGE_TAG}";
           aws lambda update-function-code --function-name $LAMBDA_FUNCTION_NAME --image-uri "${ECR_REPOSITORY_URL}:${IMAGE_TAG}"
         fi
