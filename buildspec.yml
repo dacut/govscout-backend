@@ -10,7 +10,7 @@ phases:
     on-failure: ABORT
     commands:
       - '[[ ! -z "$ECR_REPOSITORY_URL" ]] || { echo "ECR_REPOSITORY_URL is not set"; exit 1; }'
-      - yum install -y perl-IPC-Cmd
+      - yum install -y perl-FindBin perl-IPC-Cmd
       - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
       - chmod +x rustup.sh
       - ./rustup.sh -y --profile default --default-toolchain stable-aarch64-unknown-linux-gnu
@@ -26,6 +26,5 @@ phases:
       - cargo clippy -j 8 --all-features -- -D warnings
       - cargo test -j 8 --all-features
       - export IMAGE_TAG=$(date -u +%Y%m%dT%H%M%S); echo "$IMAGE_TAG" | tee imagetag.txt
-      - codebuild-breakpoint
       - /usr/local/bin/docker buildx build --platform linux/arm64 -f Dockerfile -t "${ECR_REPOSITORY_URL}:${IMAGE_TAG}" --push .
       - echo "Pushed ${ECR_REGISTRY_URL}:${IMAGE_TAG}"
