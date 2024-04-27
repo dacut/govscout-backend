@@ -13,7 +13,7 @@ phases:
     commands:
       - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
       - chmod +x rustup.sh
-      - ./rustup.sh -y --profile default --default-toolchain stable-aaarch64-unknown-linux-gnu
+      - ./rustup.sh -y --profile default --default-toolchain stable-aarch64-unknown-linux-gnu
       - export PATH="${HOME}/.cargo/bin:${PATH}"
   build:
     on-failure: ABORT
