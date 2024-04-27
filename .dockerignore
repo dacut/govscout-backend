@@ -1,1 +1,3 @@
 target/*
+!target/release/govscout-backend
+!target/debug/govscout-backend

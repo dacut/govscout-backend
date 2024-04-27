@@ -11,11 +11,12 @@ phases:
     commands:
       - '[[ ! -z "$ECR_REPOSITORY_URL" ]] || { echo "ECR_REPOSITORY_URL is not set"; exit 1; }'
       - yum install -y perl-FindBin perl-IPC-Cmd
-      - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
-      - chmod +x rustup.sh
-      - ./rustup.sh -y --profile default --default-toolchain stable-aarch64-unknown-linux-gnu
-      - export PATH="${HOME}/.cargo/bin:${PATH}"
-      - cat /proc/cpuinfo
+      - |
+        curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs \
+        && chmod +x rustup.sh \
+        && ./rustup.sh -y --profile default --default-toolchain stable-aarch64-unknown-linux-gnu \
+        && rm rustup.sh \
+        && export PATH="${HOME}/.cargo/bin:${PATH}"
   build:
     on-failure: ABORT
     commands:
@@ -23,8 +24,16 @@ phases:
       - aws --region us-east-1 ecr-public get-login-password | docker login --username AWS --password-stdin public.ecr.aws
       - export PATH="${HOME}/.cargo/bin:${PATH}"
       - cargo fmt --check
-      - cargo clippy -j 8 --all-features -- -D warnings
-      - cargo test -j 8 --all-features
+      - cargo clippy --all-features -- -D warnings
+      - cargo test --all-features
+      - cargo build --release
       - export IMAGE_TAG=$(date -u +%Y%m%dT%H%M%S); echo "$IMAGE_TAG" | tee imagetag.txt
-      - /usr/local/bin/docker buildx build --platform linux/arm64 -f Dockerfile -t "${ECR_REPOSITORY_URL}:${IMAGE_TAG}" --push .
-      - echo "Pushed ${ECR_REGISTRY_URL}:${IMAGE_TAG}"
+      - docker buildx build --platform linux/arm64 -f codebuild.dockerfile -t "${ECR_REPOSITORY_URL}:${IMAGE_TAG}" --push .
+      - echo "Pushed ${ECR_REPOSITORY_URL}:${IMAGE_TAG}"
+  post_build:
+    on-failure: ABORT
+    commands:
+      - |
+        if [[ ! -z "$LAMBDA_FUNCTION_NAME" ]]; then
+          aws lambda update-function-code --function-name $LAMBDA_FUNCTION_NAME --image-uri "${ECR_REPOSITORY_URL}:${IMAGE_TAG}"
+        fi
