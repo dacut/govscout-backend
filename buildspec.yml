@@ -2,8 +2,6 @@ version: 0.2
 
 env:
   shell: bash
-  variables:
-    ECR_REGISTRY_URL: unset
 artifacts:
   files:
     - imagetag.txt
