@@ -24,7 +24,6 @@ phases:
       - cargo fmt --check
       - cargo clippy --all-features -- -D warnings
       - cargo test --all-features
-      - export IMAGE_TAG=$(date -u +%Y%m%dT%H%M%S)
-      - echo "$IMAGE_TAG" > imagetag.txt
-      - docker buildx build --platform linux/arm64 -f Dockerfile -t "${ECR_REPOSITORY_URL}:${IMAGE_TAG}" --push .
+      - export IMAGE_TAG=$(date -u +%Y%m%dT%H%M%S); echo "$IMAGE_TAG" | tee imagetag.txt
+      - /usr/local/bin/docker buildx build --platform linux/arm64 -f Dockerfile -t "${ECR_REPOSITORY_URL}:${IMAGE_TAG}" --push .
       - echo "Pushed ${ECR_REGISTRY_URL}:${IMAGE_TAG}"
