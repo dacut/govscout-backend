@@ -10,6 +10,7 @@ phases:
     on-failure: ABORT
     commands:
       - '[[ ! -z "$ECR_REPOSITORY_URL" ]] || { echo "ECR_REPOSITORY_URL is not set"; exit 1; }'
+      - yum install -y perl-IPC-Cmd
       - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
       - chmod +x rustup.sh
       - ./rustup.sh -y --profile default --default-toolchain stable-aarch64-unknown-linux-gnu
