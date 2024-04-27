@@ -17,7 +17,7 @@ phases:
   build:
     on-failure: ABORT
     commands:
-      - aws ecr get-login-password | docker login --username AWS --password-stdin $ECR_REGISTRY_URL
+      - aws ecr get-login-password | docker login --username AWS --password-stdin $ECR_REPOSITORY_URL
       - aws --region us-east-1 ecr-public get-login-password | docker login --username AWS --password-stdin public.ecr.aws
       - export PATH="${HOME}/.cargo/bin:${PATH}"
       - cargo fmt --check
@@ -25,5 +25,5 @@ phases:
       - cargo test --all-features
       - export IMAGE_TAG=$(date -u +%Y%m%dT%H%M%S)
       - echo "$IMAGE_TAG" > imagetag.txt
-      - docker buildx build --platform linux/arm64 -f Dockerfile -t "${ECR_REGISTRY_URL}:${IMAGE_TAG}" --push .
+      - docker buildx build --platform linux/arm64 -f Dockerfile -t "${ECR_REPOSITORY_URL}:${IMAGE_TAG}" --push .
       - echo "Pushed ${ECR_REGISTRY_URL}:${IMAGE_TAG}"
