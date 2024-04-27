@@ -33,7 +33,7 @@ jobs:
     environment: dev
     timeout-minutes: 30
     needs: check
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.ROLE_ARN != '' && vars.REGION != '' && vars.ECR_REGISTRY_URL != ''
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
