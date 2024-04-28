@@ -131,14 +131,7 @@ impl Response {
             let key = format!("{}{}", log_config.s3_prefix, sha256_str);
 
             // Does a body with this SHA256 checksum already exist?
-            let etag = match log_config
-                .s3_client
-                .head_object()
-                .bucket(bucket.clone())
-                .key(key.clone())
-                .send()
-                .await
-            {
+            let etag = match log_config.s3_client.head_object().bucket(bucket.clone()).key(key.clone()).send().await {
                 Ok(head_object) => head_object.e_tag.unwrap(),
                 Err(e) => {
                     let SdkError::ServiceError(ref service_error) = e else {
