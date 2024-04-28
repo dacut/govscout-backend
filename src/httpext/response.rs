@@ -117,21 +117,24 @@ impl Response {
         let body = body.freeze();
         let content_length = body.len();
 
+        let sha256 = sha256.finalize();
+        let sha256_str = hex::encode(sha256.as_slice());
+        let sha256_b64 = BASE64_STANDARD.encode(sha256.as_slice());
+
+        let md5 = *md5.compute();
+        let md5_str = BASE64_STANDARD.encode(md5);
+
+        debug!("HTTP: {orig_url} status {status}, content-length {content_length}, sha256 {sha256_str}");
+
         if let Some(log_config) = log_config {
-            let sha256 = sha256.finalize();
-            let sha256_str = hex::encode(sha256.as_slice());
-            let sha256_b64 = BASE64_STANDARD.encode(sha256.as_slice());
-
-            let md5 = *md5.compute();
-            let md5_str = BASE64_STANDARD.encode(md5);
-
+            let bucket = log_config.s3_bucket.clone();
             let key = format!("{}{}", log_config.s3_prefix, sha256_str);
 
             // Does a body with this SHA256 checksum already exist?
             let etag = match log_config
                 .s3_client
                 .head_object()
-                .bucket(log_config.s3_bucket.clone())
+                .bucket(bucket.clone())
                 .key(key.clone())
                 .send()
                 .await
@@ -139,24 +142,26 @@ impl Response {
                 Ok(head_object) => head_object.e_tag.unwrap(),
                 Err(e) => {
                     let SdkError::ServiceError(ref service_error) = e else {
+                        error!("Failed to call HeadObject on s3://{bucket}/{key}: {e}");
                         return Err(Box::new(e));
                     };
 
                     let HeadObjectError::NotFound(_) = service_error.err() else {
+                        error!("Failed to call HeadObject on s3://{bucket}/{key}: {e}");
                         return Err(Box::new(e));
                     };
 
                     // No; write it out.
                     let bytestream = ByteStream::from(body.clone());
 
-                    debug!("Logging to S3: s3://{}/{}", log_config.s3_bucket, key);
-                    debug!("MD5: {}", md5_str);
+                    debug!("Logging to S3: s3://{bucket}/{key}");
+                    debug!("MD5: {md5_str}");
                     debug!("SHA256: {sha256_str} {sha256_b64}");
 
                     let put_object = match log_config
                         .s3_client
                         .put_object()
-                        .bucket(log_config.s3_bucket.clone())
+                        .bucket(bucket.clone())
                         .key(key.clone())
                         .content_md5(md5_str.clone())
                         .checksum_sha256(sha256_b64.clone())
