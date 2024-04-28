@@ -1,6 +1,6 @@
 use {
     crate::{
-        httpext::{aws_err_str, LogConfig},
+        httpext::{log_aws_err, LogConfig},
         BoxError,
     },
     aws_sdk_dynamodb::types::AttributeValue,
@@ -134,16 +134,17 @@ impl Response {
             let key = format!("{}{}", log_config.s3_prefix, sha256_str);
 
             // Does a body with this SHA256 checksum already exist?
-            let etag = match log_config.s3_client.head_object().bucket(bucket.clone()).key(key.clone()).send().await {
+            let etag = match log_aws_err(
+                log_config.s3_client.head_object().bucket(bucket.clone()).key(key.clone()).send().await,
+                &format!("HeadObject on s3://{bucket}/{key}"),
+            ) {
                 Ok(head_object) => head_object.e_tag.unwrap(),
                 Err(e) => {
                     let SdkError::ServiceError(ref service_error) = e else {
-                        error!("Failed to call HeadObject on s3://{bucket}/{key}: {}", aws_err_str(&e));
                         return Err(Box::new(e));
                     };
 
                     let HeadObjectError::NotFound(_) = service_error.err() else {
-                        error!("Failed to call HeadObject on s3://{bucket}/{key}: {}", aws_err_str(&e));
                         return Err(Box::new(e));
                     };
 
@@ -154,20 +155,21 @@ impl Response {
                     debug!("MD5: {md5_str}");
                     debug!("SHA256: {sha256_str} {sha256_b64}");
 
-                    let put_object = match log_config
-                        .s3_client
-                        .put_object()
-                        .bucket(bucket.clone())
-                        .key(key.clone())
-                        .content_md5(md5_str.clone())
-                        .checksum_sha256(sha256_b64.clone())
-                        .body(bytestream)
-                        .send()
-                        .await
-                    {
+                    let put_object = match log_aws_err(
+                        log_config
+                            .s3_client
+                            .put_object()
+                            .bucket(bucket.clone())
+                            .key(key.clone())
+                            .content_md5(md5_str.clone())
+                            .checksum_sha256(sha256_b64.clone())
+                            .body(bytestream)
+                            .send()
+                            .await,
+                        &format!("PutObject s3://{bucket}/{key}"),
+                    ) {
                         Ok(put_object) => put_object,
                         Err(e) => {
-                            error!("Failed to log response to S3: {}", aws_err_str(&e));
                             if let aws_smithy_runtime_api::client::result::SdkError::ServiceError(e2) = &e {
                                 let metadata = e2.err().meta();
                                 error!(
@@ -215,19 +217,7 @@ impl Response {
                     .item(DDB_KEY_CONTENT_LANGUAGE, AttributeValue::S(content_language.to_str().unwrap().to_string()));
             }
 
-            if let Err(e) = put_item.send().await {
-                error!("Failed to log response to DynamoDB: {}", aws_err_str(&e));
-                if let aws_smithy_runtime_api::client::result::SdkError::ServiceError(e2) = &e {
-                    let metadata = e2.err().meta();
-                    error!(
-                        "Error info: code={:?} message={:?} request_id={:?}",
-                        metadata.code(),
-                        metadata.message(),
-                        metadata.extra("request_id")
-                    );
-                }
-                Err(e)?
-            }
+            log_aws_err(put_item.send().await, "PutItem")?;
 
             info!("Logged response to S3 and DynamoDB: crawl_id={crawl_id}, request_id={request_id}");
         }

@@ -7,7 +7,7 @@ pub mod webs;
 
 use {
     crate::{
-        httpext::LogConfig,
+        httpext::{log_aws_err, LogConfig},
         shapes::{Operation, Request, Response},
     },
     aws_lambda_events::sqs::SqsEventObj,
@@ -108,14 +108,14 @@ async fn handler(event: LambdaEvent<SqsEventObj<Request>>) -> Result<(), LambdaE
                 batch_size += 1;
 
                 if batch_size == MAX_SQS_BATCH_SIZE {
-                    send_message_batch.send().await?;
+                    log_aws_err(send_message_batch.send().await, "SendMessageBatch")?;
                     send_message_batch = send_message_batch_base.clone();
                     batch_size = 0;
                 }
             }
 
             if batch_size > 0 {
-                send_message_batch.send().await?;
+                log_aws_err(send_message_batch.send().await, "SendMessageBatch")?;
             }
 
             Ok(())

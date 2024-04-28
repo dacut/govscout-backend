@@ -3,13 +3,13 @@ use {aws_smithy_runtime_api::client::result::SdkError, log::error, std::fmt::Deb
 /// If the result of an AWS API call is an error, log the result.
 ///
 /// This performs additional information beyond the Smithy SdkError's Display implementation.
-pub fn log_aws_err<O, E, R>(result: Result<O, SdkError<E, R>>) -> Result<O, SdkError<E, R>>
+pub fn log_aws_err<O, E, R>(result: Result<O, SdkError<E, R>>, reason: &str) -> Result<O, SdkError<E, R>>
 where
     E: Debug,
     R: Debug,
 {
     if let Err(e) = &result {
-        error!("{}", aws_err_str(e));
+        error!("{reason}: {}", aws_err_str(e));
     }
 
     result

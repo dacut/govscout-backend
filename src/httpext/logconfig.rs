@@ -80,8 +80,10 @@ impl LogConfig {
     pub async fn get_parameter(&self, name: &str) -> Result<String, BoxError> {
         let parameter_name = format!("{}{}", self.ssm_prefix, name);
         debug!("Retrieving SSM parameter {parameter_name}");
-        let result =
-            log_aws_err(self.ssm_client.get_parameter().name(&parameter_name).with_decryption(true).send().await)?;
+        let result = log_aws_err(
+            self.ssm_client.get_parameter().name(&parameter_name).with_decryption(true).send().await,
+            &format!("Failed to get SSM parameter {parameter_name}"),
+        )?;
         let Some(param) = result.parameter else {
             return Err(format!("Parameter {} not found", parameter_name).into());
         };
