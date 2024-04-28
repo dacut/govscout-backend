@@ -1,5 +1,8 @@
 use {
-    crate::{httpext::LogConfig, BoxError},
+    crate::{
+        httpext::{aws_err_str, LogConfig},
+        BoxError,
+    },
     aws_sdk_dynamodb::types::AttributeValue,
     aws_sdk_s3::{operation::head_object::HeadObjectError, primitives::ByteStream},
     aws_smithy_runtime_api::client::result::SdkError,
@@ -135,12 +138,12 @@ impl Response {
                 Ok(head_object) => head_object.e_tag.unwrap(),
                 Err(e) => {
                     let SdkError::ServiceError(ref service_error) = e else {
-                        error!("Failed to call HeadObject on s3://{bucket}/{key}: {e}");
+                        error!("Failed to call HeadObject on s3://{bucket}/{key}: {}", aws_err_str(&e));
                         return Err(Box::new(e));
                     };
 
                     let HeadObjectError::NotFound(_) = service_error.err() else {
-                        error!("Failed to call HeadObject on s3://{bucket}/{key}: {e}");
+                        error!("Failed to call HeadObject on s3://{bucket}/{key}: {}", aws_err_str(&e));
                         return Err(Box::new(e));
                     };
 
@@ -164,7 +167,7 @@ impl Response {
                     {
                         Ok(put_object) => put_object,
                         Err(e) => {
-                            error!("Failed to log response to S3: {e}");
+                            error!("Failed to log response to S3: {}", aws_err_str(&e));
                             if let aws_smithy_runtime_api::client::result::SdkError::ServiceError(e2) = &e {
                                 let metadata = e2.err().meta();
                                 error!(
@@ -213,7 +216,7 @@ impl Response {
             }
 
             if let Err(e) = put_item.send().await {
-                error!("Failed to log response to DynamoDB: {e}");
+                error!("Failed to log response to DynamoDB: {}", aws_err_str(&e));
                 if let aws_smithy_runtime_api::client::result::SdkError::ServiceError(e2) = &e {
                     let metadata = e2.err().meta();
                     error!(
