@@ -71,6 +71,7 @@ impl WebsOperation {
     }
 }
 
+/// Start the WEBS crawl by visiting the login page and submitting credentials.
 pub(crate) async fn start_crawl(
     log_config: LogConfig,
     req: Request,
