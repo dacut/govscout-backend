@@ -15,10 +15,19 @@ use {
 /// Representation of an HTML form.
 #[derive(Clone, Debug)]
 pub struct Form {
+    /// The id of the form. This is not the same as the `name` attribute.
     pub id: Option<String>,
+
+    /// The DOM [handle][Handle] to the form element.
     pub handle: Handle,
+
+    /// The method to use when submitting the form.
     pub method: Method,
+
+    /// The URL to submit the form to.
     pub url: Url,
+
+    /// Fields and their values within the form.
     pub fields: HashMap<String, String>,
 }
 

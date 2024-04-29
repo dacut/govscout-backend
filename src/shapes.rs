@@ -86,6 +86,7 @@ pub struct CrawlParameters {
     pub cookies: CookieStore,
 }
 
+/// Return the default user agent for [`CrawlParameters`].
 #[inline]
 pub fn default_user_agent() -> String {
     DEFAULT_USER_AGENT.to_string()

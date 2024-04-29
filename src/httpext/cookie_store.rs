@@ -16,6 +16,11 @@ use {
     },
 };
 
+/// A cookie store that can be serialized and deserialized across requests.
+/// 
+/// This is a variant of `reqwest_cookie_store::CookieStore` that implements `Serialize` and
+/// `Deserialize` differently, allowing non-persistent cookies to be serialized. This is necessary
+/// because our virtual browsing session spans multiple Lambda requests.
 #[derive(Clone, Debug, Default)]
 pub struct CookieStore(BaseCookieStore);
 
@@ -74,6 +79,10 @@ impl Serialize for CookieStore {
     }
 }
 
+/// A [`CookieStore`] wrapped in a read-write lock.
+/// 
+/// This allows the read-write lockked cookie store to implement the
+/// Reqwest [`CookieStore`][reqwest::cookie::CookieStore] trait.
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct CookieStoreRwLock(RwLock<CookieStore>);
 

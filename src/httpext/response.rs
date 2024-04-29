@@ -75,7 +75,10 @@ pub struct Response {
 /// Error returned when an HTTP status code is not in the 200-399 range.
 #[derive(Debug)]
 pub struct HttpStatusError {
+    /// The status code that was returned.
     pub status: StatusCode,
+
+    /// The URL that was requested.
     pub url: Url,
 }
 
@@ -88,6 +91,8 @@ impl Display for HttpStatusError {
 impl Error for HttpStatusError {}
 
 impl Response {
+    /// Create a new [`Response`] that wraps a Reqwest [response][reqwest::Response]
+    /// and tracks other metadata about this crawl.
     pub async fn new(
         resp: reqwest::Response,
         crawl_id: String,

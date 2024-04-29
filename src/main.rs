@@ -1,8 +1,20 @@
+//! AWS Lambda backend for the GovScout crawler.
+//! 
 #![warn(clippy::all)]
+#![deny(rustdoc::missing_crate_level_docs)]
+#![deny(rustdoc::broken_intra_doc_links)]
+#![deny(missing_docs)]
 
+/// HTTP extension utilities.
 pub mod httpext;
+
+/// Shapes used in the request.
 pub mod shapes;
+
+/// HTML parsing library.
 pub mod soup;
+
+/// Washington State Electronic Business Solution (WEBS) service functionality.
 pub mod webs;
 
 use {
@@ -27,6 +39,7 @@ const MSG_ATTR_OPERATION: &str = "Operation";
 const MSG_DATA_TYPE_STRING: &str = "String";
 const MAX_SQS_BATCH_SIZE: usize = 10;
 
+/// Dynamic error type that is safe to send across threads.
 pub type BoxError = Box<dyn Error + Send + Sync>;
 
 #[tokio::main]
