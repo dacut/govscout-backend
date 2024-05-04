@@ -1,5 +1,5 @@
 //! AWS Lambda backend for the GovScout crawler.
-//! 
+//!
 #![warn(clippy::all)]
 #![deny(rustdoc::missing_crate_level_docs)]
 #![deny(rustdoc::broken_intra_doc_links)]

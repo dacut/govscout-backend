@@ -1,7 +1,7 @@
 //! Request/response types for the Washington state contracting portal
 //! (WEBS: Washington's Electronic Business Solution)
-mod login;
 mod home;
+mod login;
 mod search_opp;
 
 use {
@@ -168,7 +168,6 @@ pub(crate) async fn start_crawl(
     })
 }
 
-
 /// Visit the home page of the WEBS portal, move to the "Search Opportunities" page, then request the first page of
 /// opportunities.
 async fn fetch_first_opportunity_listing_page(
@@ -220,7 +219,7 @@ async fn fetch_first_opportunity_listing_page(
 
     // Parse the form element.
     let form = Form::from_form_name(&search_url, &document, FORM_NAME_FORM1)?;
-    
+
     for form_event in search_opp::find_opportunity_next_pages(&document)? {
         // Visit this search opportunity page by submitting the form with these values.
         let mut form = form.clone();
@@ -240,7 +239,7 @@ async fn fetch_first_opportunity_listing_page(
         search_opp::parse_opportunity_listing_page(&document, &search_url, &req.crawl, &mut next_requests)?;
     }
 
-    Ok(Response{
-        next_requests
+    Ok(Response {
+        next_requests,
     })
 }

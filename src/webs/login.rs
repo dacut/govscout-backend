@@ -2,8 +2,8 @@
 use {
     crate::{
         httpext::{Client, Form, LogConfig, Response as HttpResponse, ResponseExt},
-        BoxError,
         webs::FORM_NAME_FORM1,
+        BoxError,
     },
     log::*,
 };

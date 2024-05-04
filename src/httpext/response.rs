@@ -328,7 +328,8 @@ impl ResponseExt for Response {
             Err(HttpStatusError {
                 status,
                 url: self.url().clone(),
-            }.into())
+            }
+            .into())
         } else {
             Ok(self)
         }
