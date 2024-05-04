@@ -1742,6 +1742,7 @@ dependencies = [
  "http 1.1.0",
  "httpmock",
  "lambda_runtime",
+ "lazy_static",
  "log",
  "markup5ever_rcdom",
  "md5",

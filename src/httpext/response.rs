@@ -90,6 +90,15 @@ impl Display for HttpStatusError {
 
 impl Error for HttpStatusError {}
 
+/// A trait that allows calling `error_for_status` on a `Response` or a [`Result`] that contains a `Response`.
+pub trait ResponseExt
+where
+    Self: Sized,
+{
+    /// If the HTTP status code of this response is an error, return an error containing the response.
+    fn error_for_status(self) -> Result<Response, BoxError>;
+}
+
 impl Response {
     /// Create a new [`Response`] that wraps a Reqwest [response][reqwest::Response]
     /// and tracks other metadata about this crawl.
@@ -309,17 +318,28 @@ impl Response {
     pub fn bytes(&self) -> Bytes {
         self.body.clone()
     }
+}
 
+impl ResponseExt for Response {
     /// Turn a response into an error if the server returned an error.
-    pub fn error_for_status(self) -> Result<Self, HttpStatusError> {
+    fn error_for_status(self) -> Result<Self, BoxError> {
         let status = self.status();
         if status.is_client_error() || status.is_server_error() {
             Err(HttpStatusError {
                 status,
                 url: self.url().clone(),
-            })
+            }.into())
         } else {
             Ok(self)
+        }
+    }
+}
+
+impl ResponseExt for Result<Response, BoxError> {
+    fn error_for_status(self) -> Result<Response, BoxError> {
+        match self {
+            Ok(resp) => resp.error_for_status(),
+            Err(e) => Err(e),
         }
     }
 }
