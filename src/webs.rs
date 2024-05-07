@@ -2,7 +2,7 @@
 //! (WEBS: Washington's Electronic Business Solution)
 mod home;
 mod login;
-mod search_opp;
+mod search_opportunities;
 
 use {
     crate::{
@@ -209,18 +209,18 @@ async fn fetch_first_opportunity_listing_page(
     };
 
     // Submit the search opportunities link.
-    let response = search_opp::submit_search_opps(&client, response).await?;
+    let response = search_opportunities::submit_search_opps(&client, response).await?;
     let mut next_requests = Vec::with_capacity(OPPORTUNITIES_INITIAL_SIZE);
 
     // Parse the first page of opportunities.
     let text = response.text()?;
     let document = parse_html_str(text);
-    search_opp::parse_opportunity_listing_page(&document, &search_url, &req.crawl, &mut next_requests)?;
+    search_opportunities::parse_opportunity_listing_page(&document, &search_url, &req.crawl, &mut next_requests)?;
 
     // Parse the form element.
     let form = Form::from_form_name(&search_url, &document, FORM_NAME_FORM1)?;
 
-    for form_event in search_opp::find_opportunity_next_pages(&document)? {
+    for form_event in search_opportunities::find_opportunity_next_pages(&document)? {
         // Visit this search opportunity page by submitting the form with these values.
         let mut form = form.clone();
         form_event.set_form_fields(&mut form);
@@ -236,7 +236,7 @@ async fn fetch_first_opportunity_listing_page(
         // Parse this page of opportunities.
         let text = response.text()?;
         let document = parse_html_str(text);
-        search_opp::parse_opportunity_listing_page(&document, &search_url, &req.crawl, &mut next_requests)?;
+        search_opportunities::parse_opportunity_listing_page(&document, &search_url, &req.crawl, &mut next_requests)?;
     }
 
     Ok(Response {
