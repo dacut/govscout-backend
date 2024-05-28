@@ -9,6 +9,34 @@ from scrapy import signals
 from itemadapter import is_item, ItemAdapter
 
 
+class RequestLogger:
+    def process_spider_input(self, response, spider):
+        request = response.request
+        if request:
+            spider.logger.debug("Request: %s %s", request.method, request.url)
+            if request.headers:
+                for key, values in request.headers.items():
+                    for value in values:
+                        spider.logger.debug(
+                            "Request header: %s: %s",
+                            key.decode("utf-8"),
+                            value.decode("utf-8"),
+                        )
+            if request.body:
+                spider.logger.debug("Request body: %s", request.body)
+        spider.logger.debug("Response: %s", response)
+        if response.headers:
+            for key, values in response.headers.items():
+                for value in values:
+                    spider.logger.debug(
+                        "Response header: %s: %s",
+                        key.decode("utf-8"),
+                        value.decode("utf-8"),
+                    )
+            if response.body:
+                spider.logger.debug("Response body: %s", response.body)
+
+
 class GovscoutCrawlSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
     # scrapy acts as if the spider middleware does not modify the
